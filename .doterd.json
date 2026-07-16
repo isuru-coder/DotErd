@@ -1,0 +1,6 @@
+{
+  "Version": 1,
+  "DefaultContext": "SimpleShopDbContext",
+  "Configuration": "Debug",
+  "OutputDirectory": "docs/erd"
+}

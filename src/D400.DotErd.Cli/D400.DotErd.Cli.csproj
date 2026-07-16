@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <PackageId>D400.DotErd.Tool</PackageId>
+    <ToolCommandName>doterd</ToolCommandName>
+    <PackageOutputPath>..\..\artifacts\packages</PackageOutputPath>
+    <Version>0.1.0</Version>
+    <Authors>D400</Authors>
+    <Description>Generate and verify editable draw.io ERDs from EF Core relational models.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\D400.DotErd.Core\D400.DotErd.Core.csproj" />
+    <ProjectReference Include="..\D400.DotErd.Application\D400.DotErd.Application.csproj" />
+    <ProjectReference Include="..\D400.DotErd.EfCore\D400.DotErd.EfCore.csproj" />
+    <ProjectReference Include="..\D400.DotErd.Drawio\D400.DotErd.Drawio.csproj" />
+    <ProjectReference Include="..\D400.DotErd.Diff\D400.DotErd.Diff.csproj" />
+    <ProjectReference Include="..\..\samples\D400.DotErd.Samples.SimpleShop\D400.DotErd.Samples.SimpleShop.csproj" />
+  </ItemGroup>
+</Project>

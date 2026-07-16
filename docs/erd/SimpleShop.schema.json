@@ -1,0 +1,1052 @@
+{
+  "Identity": {
+    "Value": "database:simpleshop"
+  },
+  "Name": "SimpleShop",
+  "Schemas": [
+    {
+      "Identity": {
+        "Value": "schema:simpleshop/sales"
+      },
+      "DatabaseName": "SimpleShop",
+      "Name": "sales",
+      "Tables": [
+        {
+          "Identity": {
+            "Value": "table:simpleshop/sales/orderitems"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "sales",
+          "Name": "OrderItems",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orderitems/orderid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "OrderId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orderitems/productid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "ProductId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orderitems/quantity"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "Quantity",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 2
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orderitems/unitprice"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "UnitPrice",
+              "DataType": {
+                "StoreType": "decimal(18,2)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": 18,
+                "Scale": 2,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 3
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/sales/orderitems/pk_orderitems"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "sales",
+            "TableName": "OrderItems",
+            "Name": "PK_OrderItems",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/sales/orderitems/orderid"
+              },
+              {
+                "Value": "column:simpleshop/sales/orderitems/productid"
+              }
+            ],
+            "IsComposite": true
+          },
+          "ForeignKeys": [
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/sales/orderitems/fk_orderitems_orders_orderid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "FK_OrderItems_Orders_OrderId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/sales/orderitems"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/sales/orders"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orderitems/orderid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orders/id"
+                  }
+                }
+              ],
+              "Cardinality": 1
+            },
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/sales/orderitems/fk_orderitems_products_productid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "FK_OrderItems_Products_ProductId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/sales/orderitems"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/shop/products"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orderitems/productid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/shop/products/id"
+                  }
+                }
+              ],
+              "Cardinality": 1
+            }
+          ],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/sales/orderitems/ix_orderitems_productid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "OrderItems",
+              "Name": "IX_OrderItems_ProductId",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orderitems/productid"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": false
+            }
+          ]
+        },
+        {
+          "Identity": {
+            "Value": "table:simpleshop/sales/orders"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "sales",
+          "Name": "Orders",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orders/id"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "Id",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orders/customerid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "CustomerId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orders/ordernumber"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "OrderNumber",
+              "DataType": {
+                "StoreType": "nvarchar(40)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 40,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 2
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/sales/orders/placedatutc"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "PlacedAtUtc",
+              "DataType": {
+                "StoreType": "datetime2",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 3
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/sales/orders/pk_orders"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "sales",
+            "TableName": "Orders",
+            "Name": "PK_Orders",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/sales/orders/id"
+              }
+            ],
+            "IsComposite": false
+          },
+          "ForeignKeys": [
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/sales/orders/fk_orders_customers_customerid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "FK_Orders_Customers_CustomerId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/sales/orders"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/shop/customers"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orders/customerid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/shop/customers/id"
+                  }
+                }
+              ],
+              "Cardinality": 1
+            }
+          ],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/sales/orders/ix_orders_customerid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "IX_Orders_CustomerId",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orders/customerid"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": false
+            },
+            {
+              "Identity": {
+                "Value": "index:simpleshop/sales/orders/ix_orders_ordernumber"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "sales",
+              "TableName": "Orders",
+              "Name": "IX_Orders_OrderNumber",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/sales/orders/ordernumber"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Identity": {
+        "Value": "schema:simpleshop/shop"
+      },
+      "DatabaseName": "SimpleShop",
+      "Name": "shop",
+      "Tables": [
+        {
+          "Identity": {
+            "Value": "table:simpleshop/shop/categories"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "shop",
+          "Name": "Categories",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/categories/id"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Categories",
+              "Name": "Id",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/categories/name"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Categories",
+              "Name": "Name",
+              "DataType": {
+                "StoreType": "nvarchar(120)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 120,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/shop/categories/pk_categories"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "shop",
+            "TableName": "Categories",
+            "Name": "PK_Categories",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/shop/categories/id"
+              }
+            ],
+            "IsComposite": false
+          },
+          "ForeignKeys": [],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/shop/categories/ix_categories_name"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Categories",
+              "Name": "IX_Categories_Name",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/shop/categories/name"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": false
+            }
+          ]
+        },
+        {
+          "Identity": {
+            "Value": "table:simpleshop/shop/customerprofiles"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "shop",
+          "Name": "CustomerProfiles",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customerprofiles/customerid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "CustomerProfiles",
+              "Name": "CustomerId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customerprofiles/displayname"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "CustomerProfiles",
+              "Name": "DisplayName",
+              "DataType": {
+                "StoreType": "nvarchar(200)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 200,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customerprofiles/phonenumber"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "CustomerProfiles",
+              "Name": "PhoneNumber",
+              "DataType": {
+                "StoreType": "nvarchar(32)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 32,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 1,
+              "Ordinal": 2
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/shop/customerprofiles/pk_customerprofiles"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "shop",
+            "TableName": "CustomerProfiles",
+            "Name": "PK_CustomerProfiles",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/shop/customerprofiles/customerid"
+              }
+            ],
+            "IsComposite": false
+          },
+          "ForeignKeys": [
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/shop/customerprofiles/fk_customerprofiles_customers_customerid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "CustomerProfiles",
+              "Name": "FK_CustomerProfiles_Customers_CustomerId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/shop/customerprofiles"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/shop/customers"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/shop/customerprofiles/customerid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/shop/customers/id"
+                  }
+                }
+              ],
+              "Cardinality": 0
+            }
+          ],
+          "Indexes": []
+        },
+        {
+          "Identity": {
+            "Value": "table:simpleshop/shop/customers"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "shop",
+          "Name": "Customers",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customers/id"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Customers",
+              "Name": "Id",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customers/email"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Customers",
+              "Name": "Email",
+              "DataType": {
+                "StoreType": "nvarchar(320)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 320,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/customers/name"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Customers",
+              "Name": "Name",
+              "DataType": {
+                "StoreType": "nvarchar(200)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 200,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 2
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/shop/customers/pk_customers"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "shop",
+            "TableName": "Customers",
+            "Name": "PK_Customers",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/shop/customers/id"
+              }
+            ],
+            "IsComposite": false
+          },
+          "ForeignKeys": [],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/shop/customers/ix_customers_email"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Customers",
+              "Name": "IX_Customers_Email",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/shop/customers/email"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": true
+            }
+          ]
+        },
+        {
+          "Identity": {
+            "Value": "table:simpleshop/shop/productcategories"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "shop",
+          "Name": "ProductCategories",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/productcategories/productid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "ProductCategories",
+              "Name": "ProductId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/productcategories/categoryid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "ProductCategories",
+              "Name": "CategoryId",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/shop/productcategories/pk_productcategories"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "shop",
+            "TableName": "ProductCategories",
+            "Name": "PK_ProductCategories",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/shop/productcategories/productid"
+              },
+              {
+                "Value": "column:simpleshop/shop/productcategories/categoryid"
+              }
+            ],
+            "IsComposite": true
+          },
+          "ForeignKeys": [
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/shop/productcategories/fk_productcategories_categories_categoryid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "ProductCategories",
+              "Name": "FK_ProductCategories_Categories_CategoryId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/shop/productcategories"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/shop/categories"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/shop/productcategories/categoryid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/shop/categories/id"
+                  }
+                }
+              ],
+              "Cardinality": 1
+            },
+            {
+              "Identity": {
+                "Value": "foreignkey:simpleshop/shop/productcategories/fk_productcategories_products_productid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "ProductCategories",
+              "Name": "FK_ProductCategories_Products_ProductId",
+              "DependentTableIdentity": {
+                "Value": "table:simpleshop/shop/productcategories"
+              },
+              "PrincipalTableIdentity": {
+                "Value": "table:simpleshop/shop/products"
+              },
+              "ColumnMappings": [
+                {
+                  "DependentColumnIdentity": {
+                    "Value": "column:simpleshop/shop/productcategories/productid"
+                  },
+                  "PrincipalColumnIdentity": {
+                    "Value": "column:simpleshop/shop/products/id"
+                  }
+                }
+              ],
+              "Cardinality": 1
+            }
+          ],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/shop/productcategories/ix_productcategories_categoryid"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "ProductCategories",
+              "Name": "IX_ProductCategories_CategoryId",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/shop/productcategories/categoryid"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": false
+            }
+          ]
+        },
+        {
+          "Identity": {
+            "Value": "table:simpleshop/shop/products"
+          },
+          "DatabaseName": "SimpleShop",
+          "SchemaName": "shop",
+          "Name": "Products",
+          "Columns": [
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/products/id"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Products",
+              "Name": "Id",
+              "DataType": {
+                "StoreType": "int",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 0
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/products/name"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Products",
+              "Name": "Name",
+              "DataType": {
+                "StoreType": "nvarchar(200)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 200,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 1
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/products/price"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Products",
+              "Name": "Price",
+              "DataType": {
+                "StoreType": "decimal(18,2)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": null,
+                "Precision": 18,
+                "Scale": 2,
+                "IsUnicode": false
+              },
+              "Nullability": 0,
+              "Ordinal": 2
+            },
+            {
+              "Identity": {
+                "Value": "column:simpleshop/shop/products/sku"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Products",
+              "Name": "Sku",
+              "DataType": {
+                "StoreType": "nvarchar(64)",
+                "ProviderName": "Microsoft.EntityFrameworkCore.SqlServer",
+                "MaxLength": 64,
+                "Precision": null,
+                "Scale": null,
+                "IsUnicode": true
+              },
+              "Nullability": 0,
+              "Ordinal": 3
+            }
+          ],
+          "PrimaryKey": {
+            "Identity": {
+              "Value": "primarykey:simpleshop/shop/products/pk_products"
+            },
+            "DatabaseName": "SimpleShop",
+            "SchemaName": "shop",
+            "TableName": "Products",
+            "Name": "PK_Products",
+            "ColumnIdentities": [
+              {
+                "Value": "column:simpleshop/shop/products/id"
+              }
+            ],
+            "IsComposite": false
+          },
+          "ForeignKeys": [],
+          "Indexes": [
+            {
+              "Identity": {
+                "Value": "index:simpleshop/shop/products/ix_products_sku"
+              },
+              "DatabaseName": "SimpleShop",
+              "SchemaName": "shop",
+              "TableName": "Products",
+              "Name": "IX_Products_Sku",
+              "Columns": [
+                {
+                  "ColumnIdentity": {
+                    "Value": "column:simpleshop/shop/products/sku"
+                  },
+                  "SortDirection": 0,
+                  "Ordinal": 0
+                }
+              ],
+              "IsUnique": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Relationships": [
+    {
+      "Identity": {
+        "Value": "relationship:fk_customerprofiles_customers_customerid/table:simpleshop\\/shop\\/customers/table:simpleshop\\/shop\\/customerprofiles"
+      },
+      "Name": "FK_CustomerProfiles_Customers_CustomerId",
+      "Kind": 0,
+      "Cardinality": 0,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/customers"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/shop/customerprofiles"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:fk_orderitems_orders_orderid/table:simpleshop\\/sales\\/orders/table:simpleshop\\/sales\\/orderitems"
+      },
+      "Name": "FK_OrderItems_Orders_OrderId",
+      "Kind": 0,
+      "Cardinality": 1,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/sales/orders"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/sales/orderitems"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:fk_orderitems_products_productid/table:simpleshop\\/shop\\/products/table:simpleshop\\/sales\\/orderitems"
+      },
+      "Name": "FK_OrderItems_Products_ProductId",
+      "Kind": 0,
+      "Cardinality": 1,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/products"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/sales/orderitems"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:fk_orders_customers_customerid/table:simpleshop\\/shop\\/customers/table:simpleshop\\/sales\\/orders"
+      },
+      "Name": "FK_Orders_Customers_CustomerId",
+      "Kind": 0,
+      "Cardinality": 1,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/customers"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/sales/orders"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:fk_productcategories_categories_categoryid/table:simpleshop\\/shop\\/categories/table:simpleshop\\/shop\\/productcategories"
+      },
+      "Name": "FK_ProductCategories_Categories_CategoryId",
+      "Kind": 0,
+      "Cardinality": 1,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/categories"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/shop/productcategories"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:fk_productcategories_products_productid/table:simpleshop\\/shop\\/products/table:simpleshop\\/shop\\/productcategories"
+      },
+      "Name": "FK_ProductCategories_Products_ProductId",
+      "Kind": 0,
+      "Cardinality": 1,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/products"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/shop/productcategories"
+      },
+      "PhysicalType": 0,
+      "LogicalType": null
+    },
+    {
+      "Identity": {
+        "Value": "relationship:productcategories/table:simpleshop\\/shop\\/categories/table:simpleshop\\/shop\\/products"
+      },
+      "Name": "ProductCategories",
+      "Kind": 0,
+      "Cardinality": 2,
+      "SourceIdentity": {
+        "Value": "table:simpleshop/shop/categories"
+      },
+      "TargetIdentity": {
+        "Value": "table:simpleshop/shop/products"
+      },
+      "PhysicalType": 1,
+      "LogicalType": null
+    }
+  ]
+}

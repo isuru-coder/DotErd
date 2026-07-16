@@ -1,0 +1,57 @@
+# Build output
+bin/
+obj/
+Debug/
+Release/
+x64/
+x86/
+publish/
+
+# .NET restore/build artifacts
+project.assets.json
+project.nuget.cache
+*.nuget.dgspec.json
+*.nuget.g.props
+*.nuget.g.targets
+*.assets.cache
+*.csproj.user
+*.suo
+*.user
+*.rsuser
+
+# Packages and generated artifacts
+*.nupkg
+*.snupkg
+artifacts/
+.tmp/
+
+# Local configuration
+NuGet.local.config
+*.local.config
+*.local.json
+.env
+.env.*
+
+# Test and coverage output
+TestResults/
+coverage/
+coverage.xml
+coverage.cobertura.xml
+*.coverage
+*.coveragexml
+
+# IDE/editor files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local agent/tooling state
+.agents/
+.codex/

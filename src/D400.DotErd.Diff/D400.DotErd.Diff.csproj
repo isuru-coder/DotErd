@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\D400.DotErd.Application\D400.DotErd.Application.csproj" />
+    <ProjectReference Include="..\D400.DotErd.Core\D400.DotErd.Core.csproj" />
+  </ItemGroup>
+</Project>
+

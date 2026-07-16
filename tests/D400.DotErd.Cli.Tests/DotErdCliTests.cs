@@ -1,0 +1,210 @@
+using System.Xml.Linq;
+using D400.DotErd.Application;
+
+namespace D400.DotErd.Cli.Tests;
+
+public sealed class DotErdCliTests
+{
+    [Fact]
+    public void Init_CreatesConfigAndDocumentationDirectories()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+
+        var result = Run(["init"], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.True(File.Exists(System.IO.Path.Combine(workspace.Path, ".doterd.json")));
+        Assert.True(Directory.Exists(System.IO.Path.Combine(workspace.Path, "docs", "erd")));
+        Assert.True(Directory.Exists(System.IO.Path.Combine(workspace.Path, "docs", "schema")));
+    }
+
+    [Fact]
+    public void ListContexts_PrintsSupportedDbContextNames()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+
+        var result = Run(["list-contexts"], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.Contains("D400.DotErd.Samples.SimpleShop.SimpleShopDbContext", result.Output);
+    }
+
+    [Fact]
+    public void Inspect_PrintsSummaryAndCanWriteJson()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var outputPath = System.IO.Path.Combine(workspace.Path, "schema.json");
+
+        var result = Run(["inspect", "--context", "SimpleShopDbContext", "--output", outputPath], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.Contains("Database: SimpleShop", result.Output);
+        Assert.Contains("shop.Customers", result.Output);
+        Assert.True(File.Exists(outputPath));
+        Assert.Contains("\"Name\": \"SimpleShop\"", File.ReadAllText(outputPath));
+    }
+
+    [Fact]
+    public void Generate_WritesDrawioAndSchemaJson()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var outputDirectory = System.IO.Path.Combine(workspace.Path, "artifacts");
+
+        var result = Run(["generate", "--context", "SimpleShopDbContext", "--output", outputDirectory], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        var drawioPath = System.IO.Path.Combine(outputDirectory, "SimpleShop.drawio");
+        var schemaPath = System.IO.Path.Combine(outputDirectory, "SimpleShop.schema.json");
+
+        Assert.True(File.Exists(drawioPath));
+        Assert.True(File.Exists(schemaPath));
+        Assert.Equal("mxfile", XDocument.Load(drawioPath).Root?.Name.LocalName);
+        Assert.Contains("\"Name\": \"SimpleShop\"", File.ReadAllText(schemaPath));
+    }
+
+    [Fact]
+    public void Diff_PrintsSummaryAndWritesMarkdownReport()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var oldSnapshot = System.IO.Path.Combine(workspace.Path, "old.schema.json");
+        var newSnapshot = System.IO.Path.Combine(workspace.Path, "new.schema.json");
+        var report = System.IO.Path.Combine(workspace.Path, "diff.md");
+        Run(["inspect", "--context", "SimpleShopDbContext", "--output", oldSnapshot], workspace.Path);
+        File.WriteAllText(newSnapshot, File.ReadAllText(oldSnapshot).Replace("\"StoreType\": \"nvarchar(200)\"", "\"StoreType\": \"nvarchar(201)\"", StringComparison.Ordinal));
+
+        var result = Run(["diff", "--old", oldSnapshot, "--new", newSnapshot, "--output", report], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.Contains("Schema differences detected", result.Output);
+        Assert.True(File.Exists(report));
+        Assert.Contains("# Schema Difference Report", File.ReadAllText(report));
+    }
+
+    [Fact]
+    public void Verify_ReturnsSuccessWhenSnapshotIsCurrent()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var outputDirectory = System.IO.Path.Combine(workspace.Path, "artifacts");
+        Run(["generate", "--context", "SimpleShopDbContext", "--output", outputDirectory], workspace.Path);
+
+        var result = Run(["verify", "--context", "SimpleShopDbContext", "--output", outputDirectory], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.Contains("Schema is current", result.Output);
+    }
+
+    [Fact]
+    public void Verify_ReturnsVerificationFailedWhenSnapshotIsOutdatedAndDoesNotOverwrite()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var outputDirectory = System.IO.Path.Combine(workspace.Path, "artifacts");
+        Run(["generate", "--context", "SimpleShopDbContext", "--output", outputDirectory], workspace.Path);
+        var snapshotPath = System.IO.Path.Combine(outputDirectory, "SimpleShop.schema.json");
+        var outdated = File.ReadAllText(snapshotPath).Replace("\"StoreType\": \"nvarchar(200)\"", "\"StoreType\": \"nvarchar(199)\"", StringComparison.Ordinal);
+        File.WriteAllText(snapshotPath, outdated);
+
+        var result = Run(["verify", "--context", "SimpleShopDbContext", "--output", outputDirectory], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.VerificationFailed, result.ExitCode);
+        Assert.Contains("Schema differences detected", result.Output);
+        Assert.Equal(outdated, File.ReadAllText(snapshotPath));
+    }
+
+    [Fact]
+    public void Verify_UsesErrorExitCodeForMissingSnapshot()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+
+        var result = Run(["verify", "--context", "SimpleShopDbContext", "--output", System.IO.Path.Combine(workspace.Path, "missing")], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Error, result.ExitCode);
+        Assert.Contains("Schema snapshot not found", result.Error);
+    }
+
+    [Fact]
+    public void UnknownContext_ReturnsInvalidArgumentsWithoutSecrets()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+
+        var result = Run(["inspect", "--context", "Server=secret;Password=very-secret"], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.InvalidArguments, result.ExitCode);
+        Assert.Contains("Unsupported DbContext", result.Error);
+        Assert.DoesNotContain("very-secret", result.Output);
+        Assert.DoesNotContain("very-secret", result.Error);
+    }
+
+    [Fact]
+    public void UnknownOption_ReturnsInvalidArguments()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+
+        var result = Run(["generate", "--project", "ignored"], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.InvalidArguments, result.ExitCode);
+        Assert.Contains("Unknown option '--project'", result.Error);
+    }
+
+    [Fact]
+    public void UnsupportedVersions_ReturnClearError()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = DotErdCli.Run(["--help"], output, error, workspace.Path, new DotErdVersionSupport(9, 10));
+
+        Assert.Equal((int)DotErdExitCode.Error, exitCode);
+        Assert.Contains("Unsupported .NET runtime version 9.x", error.ToString());
+        Assert.Empty(output.ToString());
+    }
+
+    [Fact]
+    public void UnsupportedEfCoreVersion_ReturnsClearError()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = DotErdCli.Run(["--help"], output, error, workspace.Path, new DotErdVersionSupport(10, 9));
+
+        Assert.Equal((int)DotErdExitCode.Error, exitCode);
+        Assert.Contains("Unsupported EF Core version 9.x", error.ToString());
+        Assert.Empty(output.ToString());
+    }
+
+    private static CliResult Run(string[] args, string workingDirectory)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = DotErdCli.Run(args, output, error, workingDirectory);
+        return new CliResult(exitCode, output.ToString(), error.ToString());
+    }
+
+    private sealed record CliResult(int ExitCode, string Output, string Error);
+
+    private sealed class TemporaryWorkspace : IDisposable
+    {
+        private TemporaryWorkspace(string path)
+        {
+            Path = path;
+        }
+
+        public string Path { get; }
+
+        public static TemporaryWorkspace Create()
+        {
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "doterd-cli-tests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(path);
+            return new TemporaryWorkspace(path);
+        }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
+    }
+}

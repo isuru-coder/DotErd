@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "d400.doterd.tool": {
+      "version": "0.1.0",
+      "commands": [
+        "doterd"
+      ]
+    }
+  }
+}
