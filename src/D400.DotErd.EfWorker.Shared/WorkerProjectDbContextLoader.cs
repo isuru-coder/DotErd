@@ -2,29 +2,29 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using System.Xml.Linq;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
-internal sealed record ExternalProjectOptions(
+namespace D400.DotErd.EfWorker.Shared;
+
+internal sealed record WorkerProjectOptions(
     string ProjectPath,
     string StartupProjectPath,
-    string Configuration,
-    string WorkingDirectory);
+    string Configuration);
 
-internal sealed record ExternalDbContextDescriptor(
+internal sealed record WorkerDbContextDescriptor(
     string DisplayName,
     string FullName,
     Func<DbContext> Factory);
 
-internal sealed class ExternalProjectLoadException(string message, Exception? innerException = null)
+internal sealed class WorkerProjectLoadException(string message, Exception? innerException = null)
     : Exception(message, innerException);
 
-internal static class ExternalProjectDbContextLoader
+internal static class WorkerProjectDbContextLoader
 {
     private const string DesignTimeFactoryInterfaceName = "Microsoft.EntityFrameworkCore.Design.IDesignTimeDbContextFactory`1";
-    private const string MetadataConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=DotErdModel;Trusted_Connection=True;TrustServerCertificate=True";
 
-    public static IReadOnlyList<ExternalDbContextDescriptor> Discover(ExternalProjectOptions options)
+    public static IReadOnlyList<WorkerDbContextDescriptor> Discover(WorkerProjectOptions options)
     {
         var loadResult = LoadProject(options);
         var contextTypes = GetLoadableTypes(loadResult.Assemblies)
@@ -37,12 +37,12 @@ internal static class ExternalProjectDbContextLoader
             .ToArray();
     }
 
-    public static ExternalDbContextDescriptor Resolve(ExternalProjectOptions options, string? contextName)
+    public static WorkerDbContextDescriptor Resolve(WorkerProjectOptions options, string? contextName)
     {
         var contexts = Discover(options);
         if (contexts.Count == 0)
         {
-            throw new ExternalProjectLoadException("No EF Core DbContext types were found in the target project or startup project.");
+            throw new WorkerProjectLoadException("No EF Core DbContext types were found in the target project or startup project.");
         }
 
         if (string.IsNullOrWhiteSpace(contextName))
@@ -52,7 +52,7 @@ internal static class ExternalProjectDbContextLoader
                 return contexts[0];
             }
 
-            throw new ExternalProjectLoadException("Multiple DbContext types were found. Pass --context <name>.");
+            throw new WorkerProjectLoadException("Multiple DbContext types were found. Pass --context <name>.");
         }
 
         var matches = contexts
@@ -64,35 +64,29 @@ internal static class ExternalProjectDbContextLoader
         return matches.Length switch
         {
             1 => matches[0],
-            0 => throw new ExternalProjectLoadException("Requested DbContext was not found in the target project or startup project."),
-            _ => throw new ExternalProjectLoadException("Requested DbContext name is ambiguous. Use the fully qualified context name.")
+            0 => throw new WorkerProjectLoadException("Requested DbContext was not found in the target project or startup project."),
+            _ => throw new WorkerProjectLoadException("Requested DbContext name is ambiguous. Use the fully qualified context name.")
         };
     }
 
-    private static ExternalProjectLoadResult LoadProject(ExternalProjectOptions options)
+    private static WorkerProjectLoadResult LoadProject(WorkerProjectOptions options)
     {
         EnsureProjectFile(options.ProjectPath, "--project");
         EnsureProjectFile(options.StartupProjectPath, "--startup-project");
-
-        BuildProject(options.ProjectPath, options);
-        if (!string.Equals(options.ProjectPath, options.StartupProjectPath, StringComparison.OrdinalIgnoreCase))
-        {
-            BuildProject(options.StartupProjectPath, options);
-        }
 
         var projectAssemblyPath = GetTargetPath(options.ProjectPath, options);
         var startupAssemblyPath = GetTargetPath(options.StartupProjectPath, options);
         if (!File.Exists(projectAssemblyPath))
         {
-            throw new ExternalProjectLoadException($"Built project assembly was not found: {projectAssemblyPath}");
+            throw new WorkerProjectLoadException($"Built project assembly was not found: {projectAssemblyPath}");
         }
 
         if (!File.Exists(startupAssemblyPath))
         {
-            throw new ExternalProjectLoadException($"Built startup assembly was not found: {startupAssemblyPath}");
+            throw new WorkerProjectLoadException($"Built startup assembly was not found: {startupAssemblyPath}");
         }
 
-        var loadContext = new ExternalProjectAssemblyLoadContext(startupAssemblyPath);
+        var loadContext = new WorkerProjectAssemblyLoadContext(startupAssemblyPath);
         var assemblies = new List<Assembly>
         {
             loadContext.LoadFromAssemblyPath(startupAssemblyPath)
@@ -103,14 +97,12 @@ internal static class ExternalProjectDbContextLoader
             assemblies.Add(loadContext.LoadFromAssemblyPath(projectAssemblyPath));
         }
 
-        EnsureSupportedEfCoreVersion(assemblies);
-
-        return new ExternalProjectLoadResult(loadContext, assemblies);
+        return new WorkerProjectLoadResult(loadContext, assemblies);
     }
 
-    private static ExternalDbContextDescriptor CreateDescriptor(Type contextType, IReadOnlyList<Assembly> assemblies)
+    private static WorkerDbContextDescriptor CreateDescriptor(Type contextType, IReadOnlyList<Assembly> assemblies)
     {
-        return new ExternalDbContextDescriptor(
+        return new WorkerDbContextDescriptor(
             contextType.Name,
             contextType.FullName ?? contextType.Name,
             () => CreateDbContext(contextType, assemblies));
@@ -144,19 +136,19 @@ internal static class ExternalProjectDbContextLoader
 
             if (optionsConstructor is null)
             {
-                throw new ExternalProjectLoadException(
+                throw new WorkerProjectLoadException(
                     $"Unable to create DbContext '{contextType.FullName}'. Add an IDesignTimeDbContextFactory<TContext>, a parameterless constructor, or a constructor that accepts DbContextOptions<TContext>.");
             }
 
             return (DbContext)optionsConstructor.Constructor.Invoke([CreateSqlServerOptions(contextType)]);
         }
-        catch (ExternalProjectLoadException)
+        catch (WorkerProjectLoadException)
         {
             throw;
         }
         catch (Exception exception)
         {
-            throw new ExternalProjectLoadException($"Unable to create DbContext '{contextType.FullName}'.", exception);
+            throw new WorkerProjectLoadException($"Unable to create DbContext '{contextType.FullName}'.", exception);
         }
     }
 
@@ -175,18 +167,18 @@ internal static class ExternalProjectDbContextLoader
         }
 
         var factory = Activator.CreateInstance(factoryType)
-            ?? throw new ExternalProjectLoadException($"Unable to create design-time factory '{factoryType.FullName}'.");
+            ?? throw new WorkerProjectLoadException($"Unable to create design-time factory '{factoryType.FullName}'.");
         var method = factoryType.GetMethod("CreateDbContext", [typeof(string[])])
-            ?? throw new ExternalProjectLoadException($"Design-time factory '{factoryType.FullName}' does not expose CreateDbContext(string[]).");
+            ?? throw new WorkerProjectLoadException($"Design-time factory '{factoryType.FullName}' does not expose CreateDbContext(string[]).");
 
         try
         {
             return (DbContext?)method.Invoke(factory, [Array.Empty<string>()])
-                ?? throw new ExternalProjectLoadException($"Design-time factory '{factoryType.FullName}' returned null.");
+                ?? throw new WorkerProjectLoadException($"Design-time factory '{factoryType.FullName}' returned null.");
         }
         catch (TargetInvocationException exception)
         {
-            throw new ExternalProjectLoadException($"Design-time factory '{factoryType.FullName}' failed to create the DbContext.", exception);
+            throw new WorkerProjectLoadException($"Design-time factory '{factoryType.FullName}' failed to create the DbContext.", exception);
         }
     }
 
@@ -194,12 +186,12 @@ internal static class ExternalProjectDbContextLoader
     {
         var builderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(contextType);
         var builder = (DbContextOptionsBuilder)(Activator.CreateInstance(builderType)
-            ?? throw new ExternalProjectLoadException($"Unable to create DbContextOptionsBuilder for '{contextType.FullName}'."));
+            ?? throw new WorkerProjectLoadException($"Unable to create DbContextOptionsBuilder for '{contextType.FullName}'."));
 
-        builder.UseSqlServer(MetadataConnectionString);
+        builder.UseSqlServer(new SqlConnection());
 
         return builderType.GetProperty(nameof(DbContextOptionsBuilder.Options), BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)?.GetValue(builder)
-            ?? throw new ExternalProjectLoadException($"Unable to create DbContextOptions for '{contextType.FullName}'.");
+            ?? throw new WorkerProjectLoadException($"Unable to create DbContextOptions for '{contextType.FullName}'.");
     }
 
     private static IEnumerable<Type> GetLoadableTypes(IEnumerable<Assembly> assemblies)
@@ -223,52 +215,23 @@ internal static class ExternalProjectDbContextLoader
         }
     }
 
-    private static void EnsureSupportedEfCoreVersion(IEnumerable<Assembly> assemblies)
-    {
-        var efCoreReferences = assemblies
-            .SelectMany(assembly => assembly.GetReferencedAssemblies())
-            .Where(reference => string.Equals(reference.Name, "Microsoft.EntityFrameworkCore", StringComparison.Ordinal))
-            .Select(reference => reference.Version?.Major)
-            .Where(major => major is not null)
-            .Distinct()
-            .ToArray();
-
-        foreach (var major in efCoreReferences)
-        {
-            if (major != DotErdVersionSupport.SupportedEfCoreMajor)
-            {
-                throw new ExternalProjectLoadException(
-                    $"Unsupported EF Core version {major}.x in the target project. D400.DotErd.Tool 0.1.0-beta.1 supports EF Core {DotErdVersionSupport.SupportedEfCoreMajor}.x.");
-            }
-        }
-    }
-
     private static void EnsureProjectFile(string path, string optionName)
     {
         if (!File.Exists(path))
         {
-            throw new ExternalProjectLoadException($"{optionName} file was not found: {path}");
+            throw new WorkerProjectLoadException($"{optionName} file was not found: {path}");
         }
 
         if (!string.Equals(Path.GetExtension(path), ".csproj", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ExternalProjectLoadException($"{optionName} must point to a .csproj file: {path}");
+            throw new WorkerProjectLoadException($"{optionName} must point to a .csproj file: {path}");
         }
     }
 
-    private static void BuildProject(string projectPath, ExternalProjectOptions options)
-    {
-        var result = RunDotnet(options.WorkingDirectory, "build", projectPath, "-c", options.Configuration, "--nologo");
-        if (result.ExitCode != 0)
-        {
-            throw new ExternalProjectLoadException($"Failed to build project '{projectPath}'.{Environment.NewLine}{result.AllOutput}");
-        }
-    }
-
-    private static string GetTargetPath(string projectPath, ExternalProjectOptions options)
+    private static string GetTargetPath(string projectPath, WorkerProjectOptions options)
     {
         var result = RunDotnet(
-            options.WorkingDirectory,
+            Path.GetDirectoryName(projectPath) ?? Directory.GetCurrentDirectory(),
             "msbuild",
             projectPath,
             "-getProperty:TargetPath",
@@ -277,7 +240,7 @@ internal static class ExternalProjectDbContextLoader
 
         if (result.ExitCode != 0)
         {
-            throw new ExternalProjectLoadException($"Unable to resolve target assembly for '{projectPath}'.{Environment.NewLine}{result.AllOutput}");
+            throw new WorkerProjectLoadException($"Unable to resolve target assembly for '{projectPath}'.");
         }
 
         var targetPath = result.StandardOutput
@@ -289,57 +252,7 @@ internal static class ExternalProjectDbContextLoader
             return Path.GetFullPath(targetPath);
         }
 
-        var targetFramework = ResolveTargetFramework(projectPath);
-        return Path.Combine(
-            Path.GetDirectoryName(projectPath) ?? options.WorkingDirectory,
-            "bin",
-            options.Configuration,
-            targetFramework,
-            $"{Path.GetFileNameWithoutExtension(projectPath)}.dll");
-    }
-
-    private static string ResolveTargetFramework(string projectPath)
-    {
-        var projectDirectory = Path.GetDirectoryName(projectPath) ?? Directory.GetCurrentDirectory();
-        var targetFramework = ReadTargetFramework(projectPath);
-        if (!string.IsNullOrWhiteSpace(targetFramework))
-        {
-            return targetFramework;
-        }
-
-        var directory = new DirectoryInfo(projectDirectory);
-        while (directory is not null)
-        {
-            var propsPath = Path.Combine(directory.FullName, "Directory.Build.props");
-            targetFramework = ReadTargetFramework(propsPath);
-            if (!string.IsNullOrWhiteSpace(targetFramework))
-            {
-                return targetFramework;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return "net10.0";
-    }
-
-    private static string? ReadTargetFramework(string path)
-    {
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-
-        try
-        {
-            var document = XDocument.Load(path);
-            return document.Descendants("TargetFramework").FirstOrDefault()?.Value
-                ?? document.Descendants("TargetFrameworks").FirstOrDefault()?.Value.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Xml.XmlException)
-        {
-            return null;
-        }
+        throw new WorkerProjectLoadException($"Unable to resolve target assembly for '{projectPath}'.");
     }
 
     private static ProcessResult RunDotnet(string workingDirectory, params string[] arguments)
@@ -360,7 +273,7 @@ internal static class ExternalProjectDbContextLoader
         }
 
         using var process = Process.Start(startInfo)
-            ?? throw new ExternalProjectLoadException("Unable to start dotnet.");
+            ?? throw new WorkerProjectLoadException("Unable to start dotnet.");
         var standardOutput = new StringBuilder();
         var standardError = new StringBuilder();
         process.OutputDataReceived += (_, eventArgs) =>
@@ -388,7 +301,7 @@ internal static class ExternalProjectDbContextLoader
         catch (OperationCanceledException exception)
         {
             TryKill(process);
-            throw new ExternalProjectLoadException($"dotnet {string.Join(' ', arguments)} timed out.", exception);
+            throw new WorkerProjectLoadException($"dotnet {string.Join(' ', arguments)} timed out.", exception);
         }
 
         process.WaitForExit();
@@ -409,20 +322,17 @@ internal static class ExternalProjectDbContextLoader
         }
     }
 
-    private sealed record ExternalProjectLoadResult(AssemblyLoadContext LoadContext, IReadOnlyList<Assembly> Assemblies);
+    private sealed record WorkerProjectLoadResult(AssemblyLoadContext LoadContext, IReadOnlyList<Assembly> Assemblies);
 
-    private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError)
-    {
-        public string AllOutput => StandardOutput + StandardError;
-    }
+    private sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 
-    private sealed class ExternalProjectAssemblyLoadContext(string startupAssemblyPath) : AssemblyLoadContext(isCollectible: false)
+    private sealed class WorkerProjectAssemblyLoadContext(string startupAssemblyPath) : AssemblyLoadContext(isCollectible: false)
     {
         private readonly AssemblyDependencyResolver resolver = new(startupAssemblyPath);
 
         protected override Assembly? Load(AssemblyName assemblyName)
         {
-            if (ShouldShareWithTool(assemblyName.Name))
+            if (ShouldShareWithWorker(assemblyName.Name))
             {
                 return null;
             }
@@ -437,7 +347,7 @@ internal static class ExternalProjectDbContextLoader
             return libraryPath is null ? IntPtr.Zero : LoadUnmanagedDllFromPath(libraryPath);
         }
 
-        private static bool ShouldShareWithTool(string? assemblyName)
+        private static bool ShouldShareWithWorker(string? assemblyName)
         {
             return assemblyName is null
                 || assemblyName.Equals("Microsoft.EntityFrameworkCore", StringComparison.Ordinal)

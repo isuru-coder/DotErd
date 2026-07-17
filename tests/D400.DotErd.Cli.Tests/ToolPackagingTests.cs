@@ -8,7 +8,7 @@ namespace D400.DotErd.Cli.Tests;
 public sealed class ToolPackagingTests
 {
     private const string PackageId = "D400.DotErd.Tool";
-    private const string PackageVersion = "0.1.0-beta.1";
+    private const string PackageVersion = "0.1.0-beta.2";
 
     [Fact]
     public void LocalToolPackage_InstallsRunsHelpAndGeneratesSimpleShopArtifacts()
@@ -63,6 +63,25 @@ public sealed class ToolPackagingTests
         Assert.Equal(0, generate.ExitCode);
         Assert.True(File.Exists(drawioPath), generate.AllOutput);
         Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(drawioPath)!, "SimpleShop.schema.json")), generate.AllOutput);
+
+        var ef9SampleProject = Path.Combine(repositoryRoot, "samples", "D400.DotErd.Samples.SimpleShop.Ef9", "D400.DotErd.Samples.SimpleShop.Ef9.csproj");
+        var ef9SampleStartupProject = Path.Combine(repositoryRoot, "samples", "D400.DotErd.Samples.SimpleShop.Ef9.Api", "D400.DotErd.Samples.SimpleShop.Ef9.Api.csproj");
+        var ef9DrawioPath = Path.Combine(workspace.Path, "generated-ef9", "SimpleShop.drawio");
+        var ef9Generate = Run(
+            doterd,
+            workspace.Path,
+            "generate",
+            "--project",
+            ef9SampleProject,
+            "--startup-project",
+            ef9SampleStartupProject,
+            "--context",
+            "D400.DotErd.Samples.SimpleShop.SimpleShopDbContext",
+            "--output",
+            ef9DrawioPath);
+        Assert.Equal(0, ef9Generate.ExitCode);
+        Assert.True(File.Exists(ef9DrawioPath), ef9Generate.AllOutput);
+        Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(ef9DrawioPath)!, "SimpleShop.schema.json")), ef9Generate.AllOutput);
     }
 
     private static void AssertPackageContents(string packagePath)
@@ -77,10 +96,17 @@ public sealed class ToolPackagingTests
 
         Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Cli.dll", StringComparison.Ordinal));
         Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Core.dll", StringComparison.Ordinal));
-        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.EfCore.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Contracts.dll", StringComparison.Ordinal));
         Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Drawio.dll", StringComparison.Ordinal));
         Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Diff.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef9/D400.DotErd.Ef9.Worker.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef9/D400.DotErd.Ef9.Worker.deps.json", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef9/D400.DotErd.Ef9.Worker.runtimeconfig.json", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef10/D400.DotErd.Ef10.Worker.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef10/D400.DotErd.Ef10.Worker.deps.json", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/workers/ef10/D400.DotErd.Ef10.Worker.runtimeconfig.json", StringComparison.Ordinal));
         Assert.Contains(entries, entry => entry.Equals("README.md", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.EfCore.dll", StringComparison.Ordinal));
         Assert.DoesNotContain(entries, entry => entry.Contains("D400.DotErd.Samples", StringComparison.Ordinal));
         Assert.DoesNotContain(entries, entry => entry.Contains(".Tests", StringComparison.Ordinal));
         Assert.DoesNotContain(entries, entry => entry.Contains("NuGet.local.config", StringComparison.Ordinal));
@@ -93,6 +119,7 @@ public sealed class ToolPackagingTests
     {
         var projectXml = File.ReadAllText(Path.Combine(repositoryRoot, "src", "D400.DotErd.Cli", "D400.DotErd.Cli.csproj"));
         Assert.DoesNotContain("D400.DotErd.Samples", projectXml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Microsoft.EntityFrameworkCore", projectXml, StringComparison.Ordinal);
     }
 
     private static ProcessResult RunDotnet(string workingDirectory, params string[] arguments)

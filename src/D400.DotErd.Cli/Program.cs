@@ -3,8 +3,6 @@ using D400.DotErd.Application;
 using D400.DotErd.Core;
 using D400.DotErd.Diff;
 using D400.DotErd.Drawio;
-using D400.DotErd.EfCore;
-using Microsoft.EntityFrameworkCore;
 
 return DotErdCli.Run(args, Console.Out, Console.Error);
 
@@ -18,16 +16,9 @@ public static class DotErdCli
         WriteIndented = true
     };
 
-    public static int Run(string[] args, TextWriter output, TextWriter error, string? workingDirectory = null, DotErdVersionSupport? versionSupport = null)
+    public static int Run(string[] args, TextWriter output, TextWriter error, string? workingDirectory = null)
     {
         workingDirectory ??= Directory.GetCurrentDirectory();
-        versionSupport ??= DotErdVersionSupport.Current();
-
-        if (!versionSupport.IsSupported)
-        {
-            error.WriteLine(versionSupport.UnsupportedMessage);
-            return (int)DotErdExitCode.Error;
-        }
 
         if (args.Length == 0 || IsHelp(args[0]))
         {
@@ -252,26 +243,17 @@ public static class DotErdCli
             return null;
         }
 
-        ExternalDbContextDescriptor context;
         try
         {
-            context = ExternalProjectDbContextLoader.Resolve(projectOptions, contextName);
-            using var dbContext = context.Factory();
-            var model = EfCoreRelationalModelExtractor.Extract(
-                dbContext,
-                new EfCoreExtractionOptions(context.DisplayName.Replace("DbContext", string.Empty, StringComparison.Ordinal)));
+            var extraction = ExternalProjectDbContextLoader.Extract(projectOptions, contextName);
+            var model = SchemaContractMapper.ToCore(extraction.Model);
 
             if (options.Verbose)
             {
-                error.WriteLine($"Extracted context: {context.FullName}");
+                error.WriteLine($"Extracted context: {extraction.Context.FullName}");
             }
 
-            return new ExtractionResult(context, model);
-        }
-        catch (EfCoreRelationalModelExtractionException exception)
-        {
-            error.WriteLine(exception.Message);
-            return null;
+            return new ExtractionResult(extraction.Context, model);
         }
         catch (ExternalProjectLoadException exception)
         {
@@ -544,33 +526,4 @@ public static class DotErdCli
         string? UnknownOption = null);
 
     private sealed record DotErdConfig(int Version, string DefaultContext, string Configuration, string OutputDirectory);
-}
-
-public sealed record DotErdVersionSupport(int DotNetMajor, int EfCoreMajor)
-{
-    public const int SupportedDotNetMajor = 10;
-
-    public const int SupportedEfCoreMajor = 10;
-
-    public bool IsSupported => DotNetMajor == SupportedDotNetMajor && EfCoreMajor == SupportedEfCoreMajor;
-
-    public string UnsupportedMessage
-    {
-        get
-        {
-            if (DotNetMajor != SupportedDotNetMajor)
-            {
-                return $"Unsupported .NET runtime version {DotNetMajor}.x. D400.DotErd.Tool 0.1.0 is tested only on .NET {SupportedDotNetMajor}.x.";
-            }
-
-            return $"Unsupported EF Core version {EfCoreMajor}.x. D400.DotErd.Tool 0.1.0 is tested only with EF Core {SupportedEfCoreMajor}.x SQL Server metadata.";
-        }
-    }
-
-    public static DotErdVersionSupport Current()
-    {
-        var dotNetMajor = Environment.Version.Major;
-        var efCoreMajor = typeof(DbContext).Assembly.GetName().Version?.Major ?? 0;
-        return new DotErdVersionSupport(dotNetMajor, efCoreMajor);
-    }
 }

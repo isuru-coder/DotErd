@@ -169,6 +169,29 @@ public sealed class DotErdCliTests
     }
 
     [Fact]
+    public void Generate_CanUseEfCore9Project()
+    {
+        using var workspace = TemporaryWorkspace.Create();
+        var outputDirectory = System.IO.Path.Combine(workspace.Path, "artifacts");
+
+        var result = Run([
+            "generate",
+            "--project",
+            SampleEf9ProjectPath(),
+            "--startup-project",
+            SampleEf9StartupProjectPath(),
+            "--context",
+            SampleContextName,
+            "--output",
+            outputDirectory
+        ], workspace.Path);
+
+        Assert.Equal((int)DotErdExitCode.Success, result.ExitCode);
+        Assert.True(File.Exists(System.IO.Path.Combine(outputDirectory, "SimpleShop.drawio")), result.Error);
+        Assert.True(File.Exists(System.IO.Path.Combine(outputDirectory, "SimpleShop.schema.json")), result.Error);
+    }
+
+    [Fact]
     public void Generate_ReturnsAmbiguousContextErrorForDuplicateShortName()
     {
         using var workspace = TemporaryWorkspace.Create();
@@ -260,31 +283,26 @@ public sealed class DotErdCliTests
     }
 
     [Fact]
-    public void UnsupportedVersions_ReturnClearError()
-    {
-        using var workspace = TemporaryWorkspace.Create();
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-
-        var exitCode = DotErdCli.Run(["--help"], output, error, workspace.Path, new DotErdVersionSupport(9, 10));
-
-        Assert.Equal((int)DotErdExitCode.Error, exitCode);
-        Assert.Contains("Unsupported .NET runtime version 9.x", error.ToString());
-        Assert.Empty(output.ToString());
-    }
-
-    [Fact]
     public void UnsupportedEfCoreVersion_ReturnsClearError()
     {
         using var workspace = TemporaryWorkspace.Create();
-        using var output = new StringWriter();
-        using var error = new StringWriter();
+        var projectPath = System.IO.Path.Combine(workspace.Path, "Ef8Project.csproj");
+        File.WriteAllText(projectPath, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+              </ItemGroup>
+            </Project>
+            """);
+        File.WriteAllText(System.IO.Path.Combine(workspace.Path, "Marker.cs"), "public sealed class Marker { }");
 
-        var exitCode = DotErdCli.Run(["--help"], output, error, workspace.Path, new DotErdVersionSupport(10, 9));
+        var result = Run(["generate", "--project", projectPath, "--startup-project", projectPath, "--context", "MissingContext"], workspace.Path);
 
-        Assert.Equal((int)DotErdExitCode.Error, exitCode);
-        Assert.Contains("Unsupported EF Core version 9.x", error.ToString());
-        Assert.Empty(output.ToString());
+        Assert.Equal((int)DotErdExitCode.InvalidArguments, result.ExitCode);
+        Assert.Contains("Unsupported EF Core version 8.x", result.Error);
     }
 
     private static CliResult Run(string[] args, string workingDirectory)
@@ -307,6 +325,16 @@ public sealed class DotErdCliTests
     private static string SampleStartupProjectPath()
     {
         return System.IO.Path.Combine(FindRepositoryRoot(), "samples", "D400.DotErd.Samples.SimpleShop.Api", "D400.DotErd.Samples.SimpleShop.Api.csproj");
+    }
+
+    private static string SampleEf9ProjectPath()
+    {
+        return System.IO.Path.Combine(FindRepositoryRoot(), "samples", "D400.DotErd.Samples.SimpleShop.Ef9", "D400.DotErd.Samples.SimpleShop.Ef9.csproj");
+    }
+
+    private static string SampleEf9StartupProjectPath()
+    {
+        return System.IO.Path.Combine(FindRepositoryRoot(), "samples", "D400.DotErd.Samples.SimpleShop.Ef9.Api", "D400.DotErd.Samples.SimpleShop.Ef9.Api.csproj");
     }
 
     private static string FindRepositoryRoot()

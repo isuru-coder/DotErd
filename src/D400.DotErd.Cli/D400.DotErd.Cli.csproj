@@ -9,7 +9,7 @@
     <ToolCommandName>doterd</ToolCommandName>
 
     <PackageId>D400.DotErd.Tool</PackageId>
-    <Version>0.1.0-beta.1</Version>
+    <Version>0.1.0-beta.2</Version>
     <Authors>Digital400</Authors>
     <Company>Digital400</Company>
 
@@ -24,14 +24,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ExternalProjectDbContextLoader.cs" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="..\D400.DotErd.Ef9.Worker\bin\$(Configuration)\net8.0\**\*.*"
+          Pack="true"
+          PackagePath="tools/$(TargetFramework)/any/workers/ef9/%(RecursiveDir)%(Filename)%(Extension)"
+          Visible="false" />
+    <None Include="..\D400.DotErd.Ef10.Worker\bin\$(Configuration)\net10.0\**\*.*"
+          Pack="true"
+          PackagePath="tools/$(TargetFramework)/any/workers/ef10/%(RecursiveDir)%(Filename)%(Extension)"
+          Visible="false" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\D400.DotErd.Core\D400.DotErd.Core.csproj" />
     <ProjectReference Include="..\D400.DotErd.Application\D400.DotErd.Application.csproj" />
-    <ProjectReference Include="..\D400.DotErd.EfCore\D400.DotErd.EfCore.csproj" />
+    <ProjectReference Include="..\D400.DotErd.Contracts\D400.DotErd.Contracts.csproj" />
     <ProjectReference Include="..\D400.DotErd.Drawio\D400.DotErd.Drawio.csproj" />
     <ProjectReference Include="..\D400.DotErd.Diff\D400.DotErd.Diff.csproj" />
   </ItemGroup>
+
+  <Target Name="BuildEfWorkers" BeforeTargets="Build">
+    <MSBuild Projects="..\D400.DotErd.Ef9.Worker\D400.DotErd.Ef9.Worker.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="..\D400.DotErd.Ef10.Worker\D400.DotErd.Ef10.Worker.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>
