@@ -26,7 +26,7 @@ public sealed class ToolPackagingTests
             "--no-restore",
             "--disable-build-servers",
             "-c",
-            "Debug",
+            "Release",
             "-o",
             packageDirectory);
         Assert.Equal(0, pack.ExitCode);
