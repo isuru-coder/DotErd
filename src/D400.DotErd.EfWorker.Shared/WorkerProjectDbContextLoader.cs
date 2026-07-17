@@ -148,7 +148,7 @@ internal static class WorkerProjectDbContextLoader
         }
         catch (Exception exception)
         {
-            throw new WorkerProjectLoadException($"Unable to create DbContext '{contextType.FullName}'.", exception);
+            throw new WorkerProjectLoadException($"Unable to create DbContext '{contextType.FullName}'.", UnwrapInvocationException(exception));
         }
     }
 
@@ -178,8 +178,15 @@ internal static class WorkerProjectDbContextLoader
         }
         catch (TargetInvocationException exception)
         {
-            throw new WorkerProjectLoadException($"Design-time factory '{factoryType.FullName}' failed to create the DbContext.", exception);
+            throw new WorkerProjectLoadException($"Design-time factory '{factoryType.FullName}' failed to create the DbContext.", UnwrapInvocationException(exception));
         }
+    }
+
+    private static Exception UnwrapInvocationException(Exception exception)
+    {
+        return exception is TargetInvocationException { InnerException: { } innerException }
+            ? innerException
+            : exception;
     }
 
     private static object CreateSqlServerOptions(Type contextType)

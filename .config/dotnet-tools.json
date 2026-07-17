@@ -3,10 +3,8 @@
   "isRoot": true,
   "tools": {
     "d400.doterd.tool": {
-      "version": "0.1.0-beta.2",
-      "commands": [
-        "doterd"
-      ],
+      "version": "0.1.0-beta.3",
+      "commands": ["doterd"],
       "rollForward": false
     }
   }

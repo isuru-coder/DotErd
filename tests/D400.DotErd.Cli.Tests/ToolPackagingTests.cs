@@ -8,7 +8,7 @@ namespace D400.DotErd.Cli.Tests;
 public sealed class ToolPackagingTests
 {
     private const string PackageId = "D400.DotErd.Tool";
-    private const string PackageVersion = "0.1.0-beta.2";
+    private const string PackageVersion = "0.1.0-beta.3";
 
     [Fact]
     public void LocalToolPackage_InstallsRunsHelpAndGeneratesSimpleShopArtifacts()

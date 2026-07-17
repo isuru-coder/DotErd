@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using D400.DotErd.Contracts;
 
 namespace D400.DotErd.EfWorker.Shared;
@@ -34,12 +35,12 @@ internal static class EfWorkerProgram
         }
         catch (WorkerProjectLoadException exception)
         {
-            error.WriteLine(exception.Message);
+            error.WriteLine(FormatException(exception));
             return 3;
         }
         catch (EfWorkerExtractionException exception)
         {
-            error.WriteLine(exception.Message);
+            error.WriteLine(FormatException(exception));
             return 4;
         }
         catch (IOException exception)
@@ -171,6 +172,45 @@ internal static class EfWorkerProgram
         {
             Directory.CreateDirectory(parent);
         }
+    }
+
+    private static string FormatException(Exception exception)
+    {
+        var lines = new List<string> { Sanitize(exception.Message) };
+
+        foreach (var innerException in EnumerateInnerExceptions(exception.InnerException))
+        {
+            var detail = $"Caused by {innerException.GetType().Name}: {Sanitize(innerException.Message)}";
+            if (!lines.Contains(detail, StringComparer.Ordinal))
+            {
+                lines.Add(detail);
+            }
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IEnumerable<Exception> EnumerateInnerExceptions(Exception? exception)
+    {
+        var count = 0;
+        while (exception is not null && count++ < 6)
+        {
+            yield return exception;
+            exception = exception.InnerException;
+        }
+    }
+
+    private static string Sanitize(string value)
+    {
+        var sanitized = Regex.Replace(
+            value,
+            @"(?i)\b(Password|Pwd|User\s*Id|UserID|UID|AccountKey|SharedAccessKey|Secret|Token)\s*=\s*[^;,\r\n]+",
+            "$1=<redacted>");
+
+        return Regex.Replace(
+            sanitized,
+            @"(?i)\b(ConnectionString)\s*=\s*[^;\r\n]+",
+            "$1=<redacted>");
     }
 
     private sealed record WorkerOptions(
