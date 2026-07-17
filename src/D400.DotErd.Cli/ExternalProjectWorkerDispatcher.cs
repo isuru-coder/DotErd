@@ -172,7 +172,7 @@ internal static class ExternalProjectDbContextLoader
         var major = majors[0];
         if (major is not 9 and not 10)
         {
-            throw new ExternalProjectLoadException($"Unsupported EF Core version {major}.x. D400.DotErd.Tool 0.1.0-beta.3 supports EF Core 9.x and 10.x.");
+            throw new ExternalProjectLoadException($"Unsupported EF Core version {major}.x. D400.DotErd.Tool 0.1.0-beta.4 supports EF Core 9.x and 10.x.");
         }
 
         return major;

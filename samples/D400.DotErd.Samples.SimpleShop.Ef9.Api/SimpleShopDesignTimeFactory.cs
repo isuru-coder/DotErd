@@ -1,4 +1,5 @@
 using D400.DotErd.Samples.SimpleShop;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -8,6 +9,9 @@ public sealed class SimpleShopDesignTimeFactory : IDesignTimeDbContextFactory<D4
 {
     public D400.DotErd.Samples.SimpleShop.SimpleShopDbContext CreateDbContext(string[] args)
     {
+        var headers = new HeaderDictionary();
+        headers.Append("X-DotErd-DesignTime", "true");
+
         var options = new DbContextOptionsBuilder<D400.DotErd.Samples.SimpleShop.SimpleShopDbContext>()
             .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SimpleShop;Trusted_Connection=True;TrustServerCertificate=True")
             .Options;

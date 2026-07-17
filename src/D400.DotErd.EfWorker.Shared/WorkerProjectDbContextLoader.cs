@@ -359,12 +359,14 @@ internal static class WorkerProjectDbContextLoader
             return assemblyName is null
                 || assemblyName.Equals("Microsoft.EntityFrameworkCore", StringComparison.Ordinal)
                 || assemblyName.StartsWith("Microsoft.EntityFrameworkCore.", StringComparison.Ordinal)
+                || assemblyName.StartsWith("Microsoft.AspNetCore.", StringComparison.Ordinal)
                 || assemblyName.Equals("Microsoft.Extensions.DependencyInjection", StringComparison.Ordinal)
                 || assemblyName.Equals("Microsoft.Extensions.DependencyInjection.Abstractions", StringComparison.Ordinal)
                 || assemblyName.Equals("Microsoft.Extensions.Logging", StringComparison.Ordinal)
                 || assemblyName.Equals("Microsoft.Extensions.Logging.Abstractions", StringComparison.Ordinal)
                 || assemblyName.Equals("Microsoft.Extensions.Options", StringComparison.Ordinal)
-                || assemblyName.Equals("Microsoft.Extensions.Primitives", StringComparison.Ordinal);
+                || assemblyName.Equals("Microsoft.Extensions.Primitives", StringComparison.Ordinal)
+                || assemblyName.Equals("Microsoft.Net.Http.Headers", StringComparison.Ordinal);
         }
     }
 }

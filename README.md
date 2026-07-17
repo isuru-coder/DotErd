@@ -6,7 +6,7 @@ The NuGet tool package is `D400.DotErd.Tool`, and the installed command is `dote
 
 ## Supported Versions
 
-D400.DotErd.Tool `0.1.0-beta.3` is tested with:
+D400.DotErd.Tool `0.1.0-beta.4` is tested with:
 
 - .NET SDK/runtime `10.x` for the CLI tool.
 - .NET runtime `8.x` when extracting EF Core 9 projects.
@@ -38,14 +38,14 @@ The tool prefers `IDesignTimeDbContextFactory<TContext>` when available. It read
 Install from NuGet.org after the package is published:
 
 ```powershell
-dotnet tool install --global D400.DotErd.Tool --version 0.1.0-beta.3
+dotnet tool install --global D400.DotErd.Tool --version 0.1.0-beta.4
 doterd --help
 ```
 
 Install from a local package build:
 
 ```powershell
-dotnet tool install D400.DotErd.Tool --version 0.1.0-beta.3 --tool-path .tmp/doterd-tool --add-source artifacts/packages
+dotnet tool install D400.DotErd.Tool --version 0.1.0-beta.4 --tool-path .tmp/doterd-tool --add-source artifacts/packages
 .tmp/doterd-tool/doterd --help
 ```
 
