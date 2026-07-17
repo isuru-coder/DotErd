@@ -1,0 +1,61 @@
+name: Build and publish DotERD tool
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    # Must match the NuGet Trusted Publisher configuration.
+    environment: main
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore solution
+        run: dotnet restore D400.DotErd.sln
+
+      - name: Build solution
+        run: dotnet build D400.DotErd.sln --configuration Release --no-restore
+
+      - name: Test solution
+        run: dotnet test D400.DotErd.sln --configuration Release --no-build --no-restore
+
+      - name: Pack DotERD tool
+        run: |
+          dotnet pack src/D400.DotErd.Cli/D400.DotErd.Cli.csproj \
+            --configuration Release \
+            --no-build \
+            --output artifacts/packages
+
+      - name: Get temporary NuGet API key
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: Kanishka
+
+      - name: Publish to NuGet.org
+        run: |
+          dotnet nuget push "artifacts/packages/*.nupkg" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate
+
+      - name: Publish symbols to NuGet.org
+        if: ${{ hashFiles('artifacts/packages/*.snupkg') != '' }}
+        run: |
+          dotnet nuget push "artifacts/packages/*.snupkg" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate

@@ -4,7 +4,6 @@ using D400.DotErd.Core;
 using D400.DotErd.Diff;
 using D400.DotErd.Drawio;
 using D400.DotErd.EfCore;
-using D400.DotErd.Samples.SimpleShop;
 using Microsoft.EntityFrameworkCore;
 
 return DotErdCli.Run(args, Console.Out, Console.Error);
@@ -12,21 +11,12 @@ return DotErdCli.Run(args, Console.Out, Console.Error);
 public static class DotErdCli
 {
     private const string ConfigFileName = ".doterd.json";
-    private const string DefaultContextName = "SimpleShopDbContext";
-    private const string DefaultDatabaseName = "SimpleShop";
     private const string DefaultOutputDirectory = "docs/erd";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true
     };
-
-    private static readonly IReadOnlyDictionary<string, SupportedContext> SupportedContexts =
-        new Dictionary<string, SupportedContext>(StringComparer.OrdinalIgnoreCase)
-        {
-            [DefaultContextName] = new(DefaultContextName, typeof(SimpleShopDbContext).FullName!, CreateSimpleShopContext),
-            [typeof(SimpleShopDbContext).FullName!] = new(DefaultContextName, typeof(SimpleShopDbContext).FullName!, CreateSimpleShopContext)
-        };
 
     public static int Run(string[] args, TextWriter output, TextWriter error, string? workingDirectory = null, DotErdVersionSupport? versionSupport = null)
     {
@@ -63,7 +53,7 @@ public static class DotErdCli
             return command switch
             {
                 DotErdCommands.Init => Init(options, output, workingDirectory),
-                DotErdCommands.ListContexts => ListContexts(output),
+                DotErdCommands.ListContexts => ListContexts(options, output, error, workingDirectory),
                 DotErdCommands.Inspect => Inspect(options, output, error, workingDirectory),
                 DotErdCommands.Generate => Generate(options, output, error, workingDirectory),
                 DotErdCommands.Diff => Diff(options, output, error, workingDirectory),
@@ -104,7 +94,7 @@ public static class DotErdCli
         var configPath = Path.Combine(root, ConfigFileName);
         var config = new DotErdConfig(
             Version: 1,
-            DefaultContext: options.Context ?? DefaultContextName,
+            DefaultContext: options.Context ?? string.Empty,
             Configuration: options.Configuration ?? "Debug",
             OutputDirectory: DefaultOutputDirectory);
 
@@ -114,12 +104,27 @@ public static class DotErdCli
         return (int)DotErdExitCode.Success;
     }
 
-    private static int ListContexts(TextWriter output)
+    private static int ListContexts(CliOptions options, TextWriter output, TextWriter error, string workingDirectory)
     {
-        foreach (var context in SupportedContexts.Values
-            .GroupBy(context => context.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .OrderBy(context => context.DisplayName, StringComparer.OrdinalIgnoreCase))
+        var projectOptions = ResolveProjectOptions(options, workingDirectory);
+        if (projectOptions is null)
+        {
+            error.WriteLine("list-contexts requires --project <path>.");
+            return (int)DotErdExitCode.InvalidArguments;
+        }
+
+        IReadOnlyList<ExternalDbContextDescriptor> contexts;
+        try
+        {
+            contexts = ExternalProjectDbContextLoader.Discover(projectOptions);
+        }
+        catch (ExternalProjectLoadException exception)
+        {
+            error.WriteLine(exception.Message);
+            return (int)DotErdExitCode.Error;
+        }
+
+        foreach (var context in contexts.OrderBy(context => context.FullName, StringComparer.OrdinalIgnoreCase))
         {
             output.WriteLine(context.FullName);
         }
@@ -238,19 +243,23 @@ public static class DotErdCli
     private static ExtractionResult? Extract(CliOptions options, TextWriter error, string workingDirectory)
     {
         var config = ReadConfig(workingDirectory);
-        var contextName = options.Context ?? config?.DefaultContext ?? DefaultContextName;
+        var contextName = options.Context ?? (string.IsNullOrWhiteSpace(config?.DefaultContext) ? null : config.DefaultContext);
+        var projectOptions = ResolveProjectOptions(options, workingDirectory);
 
-        if (!SupportedContexts.TryGetValue(contextName, out var context))
+        if (projectOptions is null)
         {
-            error.WriteLine("Unsupported DbContext. This milestone supports SimpleShopDbContext and explicitly referenced contexts only.");
+            error.WriteLine("A target EF Core project is required. Pass --project <path> and optionally --startup-project <path>.");
             return null;
         }
 
+        ExternalDbContextDescriptor context;
         try
         {
+            context = ExternalProjectDbContextLoader.Resolve(projectOptions, contextName);
+            using var dbContext = context.Factory();
             var model = EfCoreRelationalModelExtractor.Extract(
-                context.Factory,
-                new EfCoreExtractionOptions(DefaultDatabaseName));
+                dbContext,
+                new EfCoreExtractionOptions(context.DisplayName.Replace("DbContext", string.Empty, StringComparison.Ordinal)));
 
             if (options.Verbose)
             {
@@ -260,6 +269,11 @@ public static class DotErdCli
             return new ExtractionResult(context, model);
         }
         catch (EfCoreRelationalModelExtractionException exception)
+        {
+            error.WriteLine(exception.Message);
+            return null;
+        }
+        catch (ExternalProjectLoadException exception)
         {
             error.WriteLine(exception.Message);
             return null;
@@ -352,6 +366,25 @@ public static class DotErdCli
         return Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(workingDirectory, path));
     }
 
+    private static ExternalProjectOptions? ResolveProjectOptions(CliOptions options, string workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(options.Project))
+        {
+            return null;
+        }
+
+        var projectPath = ResolvePath(workingDirectory, options.Project);
+        var startupProjectPath = string.IsNullOrWhiteSpace(options.StartupProject)
+            ? projectPath
+            : ResolvePath(workingDirectory, options.StartupProject);
+
+        return new ExternalProjectOptions(
+            projectPath,
+            startupProjectPath,
+            options.Configuration ?? "Debug",
+            workingDirectory);
+    }
+
     private static void EnsureParentDirectory(string path)
     {
         var parent = Path.GetDirectoryName(path);
@@ -440,6 +473,8 @@ public static class DotErdCli
                 "--old" => parsed with { OldSnapshot = value },
                 "--new" => parsed with { NewSnapshot = value },
                 "--output" => parsed with { Output = value },
+                "--project" => parsed with { Project = value },
+                "--startup-project" => parsed with { StartupProject = value },
                 _ => parsed with { UnknownOption = option }
             };
 
@@ -474,7 +509,7 @@ public static class DotErdCli
         output.WriteLine();
         output.WriteLine("Commands:");
         output.WriteLine("  init           Create .doterd.json and documentation directories.");
-        output.WriteLine("  list-contexts  Print supported DbContext names.");
+        output.WriteLine("  list-contexts  Print DbContext names from an EF Core project.");
         output.WriteLine("  inspect        Print a schema summary and optionally write JSON.");
         output.WriteLine("  generate       Write .drawio and .schema.json artifacts.");
         output.WriteLine("  diff           Compare two schema snapshots.");
@@ -486,23 +521,13 @@ public static class DotErdCli
         output.WriteLine(command switch
         {
             DotErdCommands.Diff => "Usage: doterd diff --old <schema.json> --new <schema.json> [--output <report.md>] [--verbose]",
-            DotErdCommands.Verify => "Usage: doterd verify [--context <name>] [--output <schema.json|directory>] [--configuration <name>] [--verbose]",
-            _ => $"Usage: doterd {command} [--context <name>] [--output <path>] [--configuration <name>] [--verbose]"
+            DotErdCommands.ListContexts => "Usage: doterd list-contexts --project <project.csproj> [--startup-project <project.csproj>] [--configuration <name>] [--verbose]",
+            DotErdCommands.Verify => "Usage: doterd verify --project <project.csproj> [--startup-project <project.csproj>] --context <name> [--output <schema.json|directory>] [--configuration <name>] [--verbose]",
+            _ => $"Usage: doterd {command} --project <project.csproj> [--startup-project <project.csproj>] --context <name> [--output <path>] [--configuration <name>] [--verbose]"
         });
     }
 
-    private static SimpleShopDbContext CreateSimpleShopContext()
-    {
-        var options = new DbContextOptionsBuilder<SimpleShopDbContext>()
-            .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SimpleShop;Trusted_Connection=True;TrustServerCertificate=True")
-            .Options;
-
-        return new SimpleShopDbContext(options);
-    }
-
-    private sealed record SupportedContext(string DisplayName, string FullName, Func<DbContext> Factory);
-
-    private sealed record ExtractionResult(SupportedContext Context, DatabaseModel Model);
+    private sealed record ExtractionResult(ExternalDbContextDescriptor Context, DatabaseModel Model);
 
     private sealed record GeneratePaths(string DrawioPath, string SchemaPath);
 
@@ -512,6 +537,8 @@ public static class DotErdCli
         string? OldSnapshot = null,
         string? NewSnapshot = null,
         string? Output = null,
+        string? Project = null,
+        string? StartupProject = null,
         bool Verbose = false,
         bool Help = false,
         string? UnknownOption = null);

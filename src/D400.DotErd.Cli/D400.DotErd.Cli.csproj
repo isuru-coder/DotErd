@@ -1,14 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
     <PackAsTool>true</PackAsTool>
-    <PackageId>D400.DotErd.Tool</PackageId>
     <ToolCommandName>doterd</ToolCommandName>
-    <PackageOutputPath>..\..\artifacts\packages</PackageOutputPath>
-    <Version>0.1.0</Version>
-    <Authors>D400</Authors>
-    <Description>Generate and verify editable draw.io ERDs from EF Core relational models.</Description>
+
+    <PackageId>D400.DotErd.Tool</PackageId>
+    <Version>0.1.0-beta.1</Version>
+    <Authors>Digital400</Authors>
+    <Company>Digital400</Company>
+
+    <Description>Generates and updates editable draw.io ERDs from Entity Framework Core relational models.</Description>
+    <PackageTags>dotnet-tool ef-core erd database schema drawio documentation</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Add PackageLicenseExpression or PackageLicenseFile only after company approval. -->
+    <PackageOutputPath>../../artifacts/packages</PackageOutputPath>
+
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\D400.DotErd.Core\D400.DotErd.Core.csproj" />
@@ -16,6 +33,5 @@
     <ProjectReference Include="..\D400.DotErd.EfCore\D400.DotErd.EfCore.csproj" />
     <ProjectReference Include="..\D400.DotErd.Drawio\D400.DotErd.Drawio.csproj" />
     <ProjectReference Include="..\D400.DotErd.Diff\D400.DotErd.Diff.csproj" />
-    <ProjectReference Include="..\..\samples\D400.DotErd.Samples.SimpleShop\D400.DotErd.Samples.SimpleShop.csproj" />
   </ItemGroup>
 </Project>

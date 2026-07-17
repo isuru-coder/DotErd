@@ -1,10 +1,15 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
+using System.Xml.Linq;
 
 namespace D400.DotErd.Cli.Tests;
 
 public sealed class ToolPackagingTests
 {
+    private const string PackageId = "D400.DotErd.Tool";
+    private const string PackageVersion = "0.1.0-beta.1";
+
     [Fact]
     public void LocalToolPackage_InstallsRunsHelpAndGeneratesSimpleShopArtifacts()
     {
@@ -25,39 +30,79 @@ public sealed class ToolPackagingTests
             "-o",
             packageDirectory);
         Assert.Equal(0, pack.ExitCode);
-        Assert.True(File.Exists(Path.Combine(packageDirectory, "D400.DotErd.Tool.0.1.0.nupkg")), pack.AllOutput);
+        var packagePath = Path.Combine(packageDirectory, $"{PackageId}.{PackageVersion}.nupkg");
+        Assert.True(File.Exists(packagePath), pack.AllOutput);
+        AssertPackageContents(packagePath);
+        AssertCliProjectDoesNotReferenceSample(repositoryRoot);
 
-        var nugetConfig = Path.Combine(workspace.Path, "NuGet.config");
-        File.WriteAllText(nugetConfig, $"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <configuration>
-              <packageSources>
-                <clear />
-                <add key="local-doterd" value="{packageDirectory}" />
-              </packageSources>
-            </configuration>
-            """);
-
-        Assert.Equal(0, RunDotnet(workspace.Path, "new", "tool-manifest").ExitCode);
-
-        var install = RunDotnet(workspace.Path, "tool", "install", "D400.DotErd.Tool", "--configfile", nugetConfig);
+        var toolDirectory = Path.Combine(workspace.Path, "tool");
+        var install = RunDotnet(workspace.Path, "tool", "install", PackageId, "--version", PackageVersion, "--tool-path", toolDirectory, "--add-source", packageDirectory, "--ignore-failed-sources");
         Assert.Equal(0, install.ExitCode);
         Assert.Contains("successfully installed", install.AllOutput, StringComparison.OrdinalIgnoreCase);
 
-        var help = RunDotnet(workspace.Path, "doterd", "--help");
+        var doterd = Path.Combine(toolDirectory, OperatingSystem.IsWindows() ? "doterd.exe" : "doterd");
+        var help = Run(doterd, workspace.Path, "--help");
         Assert.Equal(0, help.ExitCode);
         Assert.Contains("Usage: doterd <command> [options]", help.StandardOutput);
 
-        var outputDirectory = Path.Combine(workspace.Path, "generated");
-        var generate = RunDotnet(workspace.Path, "doterd", "generate", "--context", "SimpleShopDbContext", "--output", outputDirectory);
+        var sampleProject = Path.Combine(repositoryRoot, "samples", "D400.DotErd.Samples.SimpleShop", "D400.DotErd.Samples.SimpleShop.csproj");
+        var sampleStartupProject = Path.Combine(repositoryRoot, "samples", "D400.DotErd.Samples.SimpleShop.Api", "D400.DotErd.Samples.SimpleShop.Api.csproj");
+        var drawioPath = Path.Combine(workspace.Path, "generated", "SimpleShop.drawio");
+        var generate = Run(
+            doterd,
+            workspace.Path,
+            "generate",
+            "--project",
+            sampleProject,
+            "--startup-project",
+            sampleStartupProject,
+            "--context",
+            "D400.DotErd.Samples.SimpleShop.SimpleShopDbContext",
+            "--output",
+            drawioPath);
         Assert.Equal(0, generate.ExitCode);
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "SimpleShop.drawio")), generate.AllOutput);
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "SimpleShop.schema.json")), generate.AllOutput);
+        Assert.True(File.Exists(drawioPath), generate.AllOutput);
+        Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(drawioPath)!, "SimpleShop.schema.json")), generate.AllOutput);
+    }
+
+    private static void AssertPackageContents(string packagePath)
+    {
+        using var archive = ZipFile.OpenRead(packagePath);
+        var entries = archive.Entries.Select(entry => entry.FullName).OrderBy(entry => entry, StringComparer.Ordinal).ToArray();
+        var nuspecEntry = archive.Entries.Single(entry => entry.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+        using var nuspecReader = new StreamReader(nuspecEntry.Open());
+        var nuspec = XDocument.Parse(nuspecReader.ReadToEnd());
+        XNamespace ns = nuspec.Root?.Name.Namespace ?? XNamespace.None;
+        var dependencies = nuspec.Descendants(ns + "dependency").Select(element => element.Attribute("id")?.Value ?? string.Empty).ToArray();
+
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Cli.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Core.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.EfCore.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Drawio.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.EndsWith("tools/net10.0/any/D400.DotErd.Diff.dll", StringComparison.Ordinal));
+        Assert.Contains(entries, entry => entry.Equals("README.md", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, entry => entry.Contains("D400.DotErd.Samples", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, entry => entry.Contains(".Tests", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, entry => entry.Contains("NuGet.local.config", StringComparison.Ordinal));
+        Assert.DoesNotContain(dependencies, dependency => dependency.StartsWith("D400.DotErd.", StringComparison.Ordinal));
+        Assert.Equal(PackageVersion, nuspec.Descendants(ns + "version").Single().Value);
+        Assert.Equal("D400.DotErd.Tool", nuspec.Descendants(ns + "id").Single().Value);
+    }
+
+    private static void AssertCliProjectDoesNotReferenceSample(string repositoryRoot)
+    {
+        var projectXml = File.ReadAllText(Path.Combine(repositoryRoot, "src", "D400.DotErd.Cli", "D400.DotErd.Cli.csproj"));
+        Assert.DoesNotContain("D400.DotErd.Samples", projectXml, StringComparison.Ordinal);
     }
 
     private static ProcessResult RunDotnet(string workingDirectory, params string[] arguments)
     {
-        var startInfo = new ProcessStartInfo("dotnet")
+        return Run("dotnet", workingDirectory, arguments);
+    }
+
+    private static ProcessResult Run(string fileName, string workingDirectory, params string[] arguments)
+    {
+        var startInfo = new ProcessStartInfo(fileName)
         {
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,

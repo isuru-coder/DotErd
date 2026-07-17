@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>D400.DotErd.Tool</id>
+    <version>0.1.0-beta.1</version>
+    <authors>Digital400</authors>
+    <readme>README.md</readme>
+    <description>Generates and updates editable draw.io ERDs from Entity Framework Core relational models.</description>
+    <tags>dotnet-tool ef-core erd database schema drawio documentation</tags>
+    <packageTypes>
+      <packageType name="DotnetTool" />
+    </packageTypes>
+    <repository type="git" commit="053cb1d45d4962934cb9141c23b76b028f2a6549" />
+  </metadata>
+</package>
